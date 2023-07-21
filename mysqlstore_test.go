@@ -35,10 +35,10 @@ func TestMySQLStore(t *testing.T) {
 
 	// Round 1 ----------------------------------------------------------------
 
-	store, err := NewMySQLStore("testuser:testpw@tcp(localhost:3306)/testdb?parseTime=true&loc=Local",
-		"sessionstore", "/", 3600, []byte("secret-key"))
+	store, err := NewMySQLStore("user:pass@tcp(host:3306)/zoo3?parseTime=true&loc=Local",
+		"testsessionstore", "/", 3600, []byte("secret-key"))
 	if err != nil {
-		t.Fatalf("Error connecting to MySQL: ", err)
+		t.Fatalf("Error connecting to MySQL: %v", err)
 	}
 	defer store.Close()
 
@@ -65,7 +65,7 @@ func TestMySQLStore(t *testing.T) {
 	hdr = rsp.Header()
 	cookies, ok = hdr["Set-Cookie"]
 	if !ok || len(cookies) != 1 {
-		t.Fatalf("No cookies. Header:", hdr)
+		t.Fatalf("No cookies. Header:%s", hdr)
 	}
 
 	// Round 2 ----------------------------------------------------------------
@@ -130,7 +130,7 @@ func TestMySQLStore(t *testing.T) {
 	hdr = rsp.Header()
 	cookies, ok = hdr["Set-Cookie"]
 	if !ok || len(cookies) != 1 {
-		t.Fatalf("No cookies. Header:", hdr)
+		t.Fatalf("No cookies. Header:%s", hdr)
 	}
 
 	// Round 4 ----------------------------------------------------------------
@@ -183,7 +183,7 @@ func TestMySQLStore(t *testing.T) {
 	hdr = rsp.Header()
 	cookies, ok = hdr["Set-Cookie"]
 	if !ok || len(cookies) != 1 {
-		t.Fatalf("No cookies. Header:", hdr)
+		t.Fatalf("No cookies. Header: %s", hdr)
 	}
 
 	// Round 6 ----------------------------------------------------------------

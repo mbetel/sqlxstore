@@ -1,4 +1,5 @@
-/* Gorilla Sessions backend for MySQL.
+/*
+	Gorilla Sessions backend for MySQL.
 
 Copyright (c) 2013 Contributors. See the list of contributors in the CONTRIBUTORS file for details.
 
@@ -14,6 +15,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"net/http"
 	"strings"
@@ -21,7 +23,7 @@ import (
 )
 
 type MySQLStore struct {
-	db         *sql.DB
+	db         *sqlx.DB
 	stmtInsert *sql.Stmt
 	stmtDelete *sql.Stmt
 	stmtUpdate *sql.Stmt
@@ -45,7 +47,7 @@ func init() {
 }
 
 func NewMySQLStore(endpoint string, tableName string, path string, maxAge int, keyPairs ...[]byte) (*MySQLStore, error) {
-	db, err := sql.Open("mysql", endpoint)
+	db, err := sqlx.Open("mysql", endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +55,7 @@ func NewMySQLStore(endpoint string, tableName string, path string, maxAge int, k
 	return NewMySQLStoreFromConnection(db, tableName, path, maxAge, keyPairs...)
 }
 
-func NewMySQLStoreFromConnection(db *sql.DB, tableName string, path string, maxAge int, keyPairs ...[]byte) (*MySQLStore, error) {
+func NewMySQLStoreFromConnection(db *sqlx.DB, tableName string, path string, maxAge int, keyPairs ...[]byte) (*MySQLStore, error) {
 	// Make sure table name is enclosed.
 	tableName = "`" + strings.Trim(tableName, "`") + "`"
 
@@ -120,11 +122,11 @@ func NewMySQLStoreFromConnection(db *sql.DB, tableName string, path string, maxA
 }
 
 func (m *MySQLStore) Close() {
-	m.stmtSelect.Close()
-	m.stmtUpdate.Close()
-	m.stmtDelete.Close()
-	m.stmtInsert.Close()
-	m.db.Close()
+	_ = m.stmtSelect.Close()
+	_ = m.stmtUpdate.Close()
+	_ = m.stmtDelete.Close()
+	_ = m.stmtInsert.Close()
+	_ = m.db.Close()
 }
 
 func (m *MySQLStore) Get(r *http.Request, name string) (*sessions.Session, error) {
