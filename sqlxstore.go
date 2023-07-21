@@ -5,7 +5,7 @@ Copyright (c) 2013 Contributors. See the list of contributors in the CONTRIBUTOR
 
 This software is licensed under a MIT style license available in the LICENSE file.
 */
-package mysqlstore
+package sqlxstore
 
 import (
 	"database/sql"
@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-type MySQLStore struct {
+type SqlxStore struct {
 	db         *sqlx.DB
 	stmtInsert *sql.Stmt
 	stmtDelete *sql.Stmt
@@ -46,16 +46,16 @@ func init() {
 	gob.Register(time.Time{})
 }
 
-func NewMySQLStore(endpoint string, tableName string, path string, maxAge int, keyPairs ...[]byte) (*MySQLStore, error) {
+func NewSqlxStore(endpoint string, tableName string, path string, maxAge int, keyPairs ...[]byte) (*SqlxStore, error) {
 	db, err := sqlx.Open("mysql", endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewMySQLStoreFromConnection(db, tableName, path, maxAge, keyPairs...)
+	return NewSqlxStoreFromConnection(db, tableName, path, maxAge, keyPairs...)
 }
 
-func NewMySQLStoreFromConnection(db *sqlx.DB, tableName string, path string, maxAge int, keyPairs ...[]byte) (*MySQLStore, error) {
+func NewSqlxStoreFromConnection(db *sqlx.DB, tableName string, path string, maxAge int, keyPairs ...[]byte) (*SqlxStore, error) {
 	// Make sure table name is enclosed.
 	tableName = "`" + strings.Trim(tableName, "`") + "`"
 
@@ -106,7 +106,7 @@ func NewMySQLStoreFromConnection(db *sqlx.DB, tableName string, path string, max
 		return nil, stmtErr
 	}
 
-	return &MySQLStore{
+	return &SqlxStore{
 		db:         db,
 		stmtInsert: stmtInsert,
 		stmtDelete: stmtDelete,
@@ -121,7 +121,7 @@ func NewMySQLStoreFromConnection(db *sqlx.DB, tableName string, path string, max
 	}, nil
 }
 
-func (m *MySQLStore) Close() {
+func (m *SqlxStore) Close() {
 	_ = m.stmtSelect.Close()
 	_ = m.stmtUpdate.Close()
 	_ = m.stmtDelete.Close()
@@ -129,11 +129,11 @@ func (m *MySQLStore) Close() {
 	_ = m.db.Close()
 }
 
-func (m *MySQLStore) Get(r *http.Request, name string) (*sessions.Session, error) {
+func (m *SqlxStore) Get(r *http.Request, name string) (*sessions.Session, error) {
 	return sessions.GetRegistry(r).Get(m, name)
 }
 
-func (m *MySQLStore) New(r *http.Request, name string) (*sessions.Session, error) {
+func (m *SqlxStore) New(r *http.Request, name string) (*sessions.Session, error) {
 	session := sessions.NewSession(m, name)
 	session.Options = &sessions.Options{
 		Path:     m.Options.Path,
@@ -158,7 +158,7 @@ func (m *MySQLStore) New(r *http.Request, name string) (*sessions.Session, error
 	return session, err
 }
 
-func (m *MySQLStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
+func (m *SqlxStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
 	var err error
 	if session.ID == "" {
 		if err = m.insert(session); err != nil {
@@ -175,7 +175,7 @@ func (m *MySQLStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 	return nil
 }
 
-func (m *MySQLStore) insert(session *sessions.Session) error {
+func (m *SqlxStore) insert(session *sessions.Session) error {
 	var createdOn time.Time
 	var modifiedOn time.Time
 	var expiresOn time.Time
@@ -212,7 +212,7 @@ func (m *MySQLStore) insert(session *sessions.Session) error {
 	return nil
 }
 
-func (m *MySQLStore) Delete(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
+func (m *SqlxStore) Delete(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
 
 	// Set cookie to expire.
 	options := *session.Options
@@ -230,7 +230,7 @@ func (m *MySQLStore) Delete(r *http.Request, w http.ResponseWriter, session *ses
 	return nil
 }
 
-func (m *MySQLStore) save(session *sessions.Session) error {
+func (m *SqlxStore) save(session *sessions.Session) error {
 	if session.IsNew == true {
 		return m.insert(session)
 	}
@@ -268,7 +268,7 @@ func (m *MySQLStore) save(session *sessions.Session) error {
 	return nil
 }
 
-func (m *MySQLStore) load(session *sessions.Session) error {
+func (m *SqlxStore) load(session *sessions.Session) error {
 	row := m.stmtSelect.QueryRow(session.ID)
 	sess := sessionRow{}
 	scanErr := row.Scan(&sess.id, &sess.data, &sess.createdOn, &sess.modifiedOn, &sess.expiresOn)
@@ -277,7 +277,7 @@ func (m *MySQLStore) load(session *sessions.Session) error {
 	}
 	if sess.expiresOn.Sub(time.Now()) < 0 {
 		log.Printf("Session expired on %s, but it is %s now.", sess.expiresOn, time.Now())
-		return errors.New("Session expired")
+		return errors.New("session expired")
 	}
 	err := securecookie.DecodeMulti(session.Name(), sess.data, &session.Values, m.Codecs...)
 	if err != nil {

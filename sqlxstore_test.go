@@ -4,7 +4,7 @@
 // Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE file.
 
-package mysqlstore
+package sqlxstore
 
 import (
 	"encoding/gob"
@@ -19,7 +19,7 @@ type FlashMessage struct {
 	Message string
 }
 
-func TestMySQLStore(t *testing.T) {
+func TestSqlxStore(t *testing.T) {
 	var req *http.Request
 	var rsp *httptest.ResponseRecorder
 	var hdr http.Header
@@ -35,7 +35,7 @@ func TestMySQLStore(t *testing.T) {
 
 	// Round 1 ----------------------------------------------------------------
 
-	store, err := NewMySQLStore("user:pass@tcp(host:3306)/zoo3?parseTime=true&loc=Local",
+	store, err := NewSqlxStore("user:pass@tcp(host:3306)/zoo3?parseTime=true&loc=Local",
 		"testsessionstore", "/", 3600, []byte("secret-key"))
 	if err != nil {
 		t.Fatalf("Error connecting to MySQL: %v", err)
@@ -161,7 +161,7 @@ func TestMySQLStore(t *testing.T) {
 	}
 
 	// Round 5 ----------------------------------------------------------------
-	// MySQLStore Delete session (not exposed by gorilla sessions interface).
+	// SqlxStore Delete session (not exposed by gorilla sessions interface).
 
 	req, _ = http.NewRequest("GET", "http://localhost:8080/", nil)
 	req.Header.Add("Cookie", cookies[0])

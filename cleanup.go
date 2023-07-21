@@ -1,4 +1,4 @@
-package mysqlstore
+package sqlxstore
 
 import (
 	"log"
@@ -11,7 +11,7 @@ var defaultInterval = time.Minute * 5
 // sessions from the database.
 //
 // The design is based on https://github.com/yosssi/boltstore
-func (m *MySQLStore) Cleanup(interval time.Duration) (chan<- struct{}, <-chan struct{}) {
+func (m *SqlxStore) Cleanup(interval time.Duration) (chan<- struct{}, <-chan struct{}) {
 	if interval <= 0 {
 		interval = defaultInterval
 	}
@@ -22,13 +22,13 @@ func (m *MySQLStore) Cleanup(interval time.Duration) (chan<- struct{}, <-chan st
 }
 
 // StopCleanup stops the background cleanup from running.
-func (m *MySQLStore) StopCleanup(quit chan<- struct{}, done <-chan struct{}) {
+func (m *SqlxStore) StopCleanup(quit chan<- struct{}, done <-chan struct{}) {
 	quit <- struct{}{}
 	<-done
 }
 
 // cleanup deletes expired sessions at set intervals.
-func (m *MySQLStore) cleanup(interval time.Duration, quit <-chan struct{}, done chan<- struct{}) {
+func (m *SqlxStore) cleanup(interval time.Duration, quit <-chan struct{}, done chan<- struct{}) {
 	ticker := time.NewTicker(interval)
 
 	defer func() {
@@ -45,14 +45,14 @@ func (m *MySQLStore) cleanup(interval time.Duration, quit <-chan struct{}, done 
 			// Delete expired sessions on each tick.
 			err := m.deleteExpired()
 			if err != nil {
-				log.Printf("mysqlstore: unable to delete expired sessions: %v", err)
+				log.Printf("sqlxstore: unable to delete expired sessions: %v", err)
 			}
 		}
 	}
 }
 
 // deleteExpired deletes expired sessions from the database.
-func (m *MySQLStore) deleteExpired() error {
+func (m *SqlxStore) deleteExpired() error {
 	var deleteStmt = "DELETE FROM " + m.table + " WHERE expires_on < NOW()"
 	_, err := m.db.Exec(deleteStmt)
 	return err
